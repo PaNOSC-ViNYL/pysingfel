@@ -103,7 +103,7 @@ def parse_input(args):
     """
     def ParseBoolean(b):
         # Handle different possible Boolean types.
-        if b is None:
+        if b is None or b == "None":
             return b
         if b == False or b == True:
             return b
