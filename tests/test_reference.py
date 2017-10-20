@@ -5,6 +5,15 @@ from pysingfel.radiationDamage import *
 class ReferenceTest(unittest.TestCase):
     """ Test class for the reference test. """
 
+    @classmethod
+    def setUpClass(cls):
+        """ Setting up the test class."""
+        os.mkdir("diffr_out")
+
+    @classmethod
+    def tearDownClass(cls):
+        """ Tear down the test class."""
+        shutil.rmtree("diffr_out")
 
     def testDiffractionCalculation(self):
         """
@@ -52,9 +61,6 @@ class ReferenceTest(unittest.TestCase):
         data = h5py.File("diffr_out/diffr_out_0000001.h5","r")['data/0000001/diffr'].value
 
         self.assertLess( ((data - reference_data)**2).max(), 1e-29 )
-
-        shutil.rmtree( parameters['outputDir'] )
-
 
 if __name__ == '__main__':
     unittest.main()
