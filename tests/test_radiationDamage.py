@@ -1,9 +1,21 @@
 import unittest
+import os, shutil
 
 from pysingfel.radiationDamage import *
 
 
 class radiationDamageTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """ Setting up the test class."""
+        os.mkdir("diffr_out")
+
+    @classmethod
+    def tearDownClass(cls):
+        """ Tear down the test class."""
+        shutil.rmtree("diffr_out")
+
     def test_diffraction_calculation(self):
         """
         Test diffraction calculation using just one process.

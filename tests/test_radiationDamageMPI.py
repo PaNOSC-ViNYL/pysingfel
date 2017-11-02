@@ -1,9 +1,20 @@
 import subprocess
-import shlex
+import shlex, os, shutil
 import unittest
 
 
 class radiationDamageMPITests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """ Setting up the test class."""
+        os.mkdir("diffr_out")
+
+    @classmethod
+    def tearDownClass(cls):
+        """ Tear down the test class."""
+        shutil.rmtree("diffr_out")
+
     def test_diffraction_calculation_parallel(self):
         """
         Test diffraction calculation in parallel.
