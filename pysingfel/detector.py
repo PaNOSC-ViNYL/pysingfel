@@ -2,7 +2,7 @@ from pysingfel.beam import *
 
 
 class Detector(object):
-    def __init__(self, *fname):
+    def __init__(self, fname):
         self.d = 0  # (m) detector distance
         self.pix_width = 0  # (m)
         self.pix_height = 0  # (m)
@@ -18,7 +18,7 @@ class Detector(object):
         self.solidAngle = None  # solid angle
         self.PolarCorr = None  # Polarization correction (+ thomson?)
         if fname is not None:
-            self.readGeomFile(fname[0])
+            self.readGeomFile(fname)
 
     # setters and getters
     def set_detector_dist(self, dist):
@@ -73,15 +73,18 @@ class Detector(object):
         with open(fname) as f:
             content = f.readlines()
             for line in content:
-                if line[0] != '#' and line[0] != ';' and len(line) > 1:
-                    tmp = line.replace('=', ' ').split()
-                    if tmp[0] == 'geom/d':
-                        self.d = float(tmp[1])
-                    if tmp[0] == 'geom/pix_width':
-                        self.pix_width = float(tmp[1])
+                if line[0] != '#' and line[0] != ';' and len(line) > 1 and '=' in line:
+                    line = line.replace(' ','')
+                    line = line.replace('\t','')
+                    key, value = line.split('=')
+                    identifier, key = key.split('/')
+                    if key == 'd':
+                        self.d = float(value)
+                    if key == 'pix_width':
+                        self.pix_width = float(value)
                         self.pix_height = self.pix_width
-                    if tmp[0] == 'geom/px':
-                        self.px = int(tmp[1])
+                    if key == 'px':
+                        self.px = int(value)
                         self.py = self.px
                         self.numPix = self.px ** 2
                         self.cx = (self.px - 1) / 2.

@@ -19,7 +19,7 @@ def wavelength2photonEnergy(wavelength):
 
 
 class Beam(object):
-    def __init__(self, *fname):
+    def __init__(self, fname):
         self.Lambda = 0  # (m) wavelength
         self.photon_energy = 0  # (eV) photon energy
         self.k = 0  # (m^-1)
@@ -31,7 +31,7 @@ class Beam(object):
         self.phi_in = 0  # number of photon per pulse per area (m^-2)
         self.Polarization = 0  # Default polarization angle, requires input from user or file in the future
         if fname is not None:
-            self.readBeamFile(fname[0])
+            self.readBeamFile(fname)
 
     def update(self):
         """

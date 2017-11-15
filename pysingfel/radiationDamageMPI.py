@@ -7,14 +7,13 @@ from mpi4py import MPI
 from pysingfel.radiationDamage import *
 
 
-def main():
+def main(parameters=None):
     """
     Main function to implement the master-slave model for parallel execution.
     """
     # Delete the first argument from the command line, which is the file name.
-    del sys.argv[0]
+    #del sys.argv[0]
     # Parse the input command line argumment to get parameters for simulation.
-    parameters = parse_input(sys.argv)
 
     # Initialize MPI
     comm = MPI.COMM_WORLD
@@ -143,4 +142,5 @@ def parse_input(args):
     return vars(parser.parse_args(args))
 
 if __name__ == '__main__':
-    main()
+    parameters = parse_input(sys.argv[1:])
+    main(parameters=parameters)
