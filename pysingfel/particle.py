@@ -25,7 +25,7 @@ class Particle(object):
         if len(fname) != 0:
             # If input is a pdb file.
             if fname[0].split(".")[-1].lower() == "pdb":
-                self.readPDB(fname[0],
+                self.readPDB(fname[0])
 
             else:
                 # read from pmi file to get info about radiation damage at a certain time slice
