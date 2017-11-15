@@ -21,16 +21,22 @@ class Particle(object):
         self.numComptonQSamples = 0  # number of Compton q samples
         self.sBound = None  # Compton: static structure factor S(q)
         self.nFree = None  # Compton: number of free electrons
+
         if len(fname) != 0:
-            # read from pmi file to get info about radiation damage at a certain time slice
-            if len(fname) == 1:
-                datasetname = 'data/snp_0000001'  # default dataset name -> set to be initial time
-                self.readh5File(fname[0], datasetname)
-            elif len(fname) == 2:
-                # both pmi file and the time slice (dataset) are provided
-                self.readh5File(fname[0], fname[1])
+            # If input is a pdb file.
+            if fname[0].split(".")[-1].lower() == "pdb":
+                self.readPDB(fname[0],
+
             else:
-                raise ValueError('Wrong number of parameters to construct the particle object!')
+                # read from pmi file to get info about radiation damage at a certain time slice
+                if len(fname) == 1:
+                    datasetname = 'data/snp_0000001'  # default dataset name -> set to be initial time
+                    self.readh5File(fname[0], datasetname)
+                elif len(fname) == 2:
+                    # both pmi file and the time slice (dataset) are provided
+                    self.readh5File(fname[0], fname[1])
+                else:
+                    raise ValueError('Wrong number of parameters to construct the particle object!')
 
     # setters and getters
     def set_atomPos(self, pos):
