@@ -167,79 +167,18 @@ def symmpdb(fname, use_old_implementation=False):
     parser = PDB.Parser()
     structure = parser('structure', fname)
 
-    all_atoms = PDB.Selection.unfold_entities(structure, 'A')
+    # Get operations.
+    symmetries, translations = parse_symmetry_operations(fname)
 
-    ordered_unsymmetrized_atoms = []
-    for atom in all_atoms:
-        if atom.get_occupancy() < 0.5:
-            continue
+    symmetrized_atoms = []
+    for chain in structure.get_chains():
+        symmetrized_chain =  apply_symmetry_operations( chain, symmetries, translations )
 
-        if atom.get_altloc() != 'B':
-            continue
-        #if hasattr(atom, 'disordered_select'):
-            #atom.disordered_select('A')
+        chain_atoms = symmetrized_chain.get_atoms()
 
-    ordered_unsymmetrized_atoms = [[atom.get_coord()[0], atom.get_coord()[1],atom.get_coord()[2], getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in all_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
 
-def parse_symmetry_operations(pdb_fname):
-    # Get symmetry operations.
-    with open(pdb_fname, 'r') as fin:
+        symmetrized_atoms += [[atom.get_coord()[0], atom.get_coord()[1],atom.get_coord()[2], getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in chain_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
 
-        # read symmetry transformations
-        flag1 = 'REMARK 350 APPLY THE FOLLOWING TO CHAINS: '
-        flag2 = 'REMARK 350                    AND CHAINS: '
-        if line.startswith(flag1):
-            line = line.strip()
-            chainIDs = line.replace(flag1, '').replace(',', '').split()
-            line = fin.readline().strip()
-            while line.startswith(flag2):
-                chainIDs += line.replace(flag2, '').replace(',', '').split()
-                line = fin.readline().strip()
-            sys_tmp = []
-            trans_tmp = []
-            while line[13:18] == 'BIOMT':
-                sys_tmp.append([float(line[24:33]), float(line[34:43]), float(line[44:53])])
-                trans_tmp.append(float(line[58:68]))
-                line = fin.readline().strip()
-            sym_dict[tuple(chainIDs)] = np.asarray(sys_tmp)  # cannot use list as dict keys, but tuple works
-            trans_dict[tuple(chainIDs)] = np.asarray(trans_tmp)
-            continue
-
-        line = fin.readline()
-
-    fin.close()
-
-    # convert atom positions in numpy array
-    for chainID in atoms_dict.keys():
-        atoms_dict[chainID] = np.asarray(atoms_dict[chainID])
-
-    atoms = []
-
-    for chainIDs in sym_dict.keys():
-        atoms_array = []
-        for chainID in chainIDs:
-            if len(atoms_array) == 0:
-                atoms_array = atoms_dict[chainID]
-            else:
-                atoms_array = np.vstack((atoms_array, atoms_dict[chainID]))
-        sym_array = sym_dict[chainIDs]
-        trans_array = trans_dict[chainIDs]
-        for i in range(int(len(sym_array) / 3)):
-            sym_op = sym_array[3 * i:3 * (i + 1), :]
-            trans = trans_array[3 * i:3 * (i + 1)]
-            atoms_array[:, 0:3] = np.dot(atoms_array[:, 0:3], sym_op.T) + np.tile(trans, (len(atoms_array), 1))
-            if len(atoms) == 0:
-                atoms = atoms_array
-            else:
-                atoms = np.vstack((atoms, atoms_array))
-
-    # if no REMARK 350 provided, then save atoms_dict in atoms directly
-    if not sym_dict.keys():
-        for chainID in atoms_dict.keys():
-            if len(atoms) == 0:
-                atoms = atoms_dict[chainID]
-            else:
-                atoms = np.vstack((atoms, atoms_dict[chainID]))
 
     x_max = np.max(atoms[:, 0])
     x_min = np.min(atoms[:, 0])
@@ -256,6 +195,78 @@ def parse_symmetry_operations(pdb_fname):
     # sort based on atomtype and charge
     return atoms[np.lexsort((atoms[:,4].astype(int), atoms[:,3].astype(int)))]
 
+
+def parse_symmetry_operations(pdb_fname):
+    # Get symmetry operations.
+    with open(pdb_fname, 'r') as fin:
+
+        # Setup dictionaries that will get tuple of chain IDs as keys and symmetry operations as
+        sym_dict = {}
+        trans_dict ={}
+
+        # Marks of the block for symmetry transformations (rotation + translation)
+        flag1 = 'REMARK 350 APPLY THE FOLLOWING TO CHAINS: '
+        flag2 = 'REMARK 350                    AND CHAINS: '
+
+        line = fin.readline()
+        while line:
+            if line.startswith(flag1):
+                line = line.strip()
+                chainIDs = line.replace(flag1, '').replace(',', '').split()
+                line = fin.readline().strip()
+                while line.startswith(flag2):
+                    chainIDs += line.replace(flag2, '').replace(',', '').split()
+                    line = fin.readline().strip()
+                sys_tmp = []
+                trans_tmp = []
+                while line[13:18] == 'BIOMT':
+                    sys_tmp.append([float(line[24:33]), float(line[34:43]), float(line[44:53])])
+                    trans_tmp.append(float(line[58:68]))
+                    line = fin.readline().strip()
+                sym_dict[tuple(chainIDs)] = np.asarray(sys_tmp)  # cannot use list as dict keys, but tuple works
+                trans_dict[tuple(chainIDs)] = np.asarray(trans_tmp)
+                continue
+
+            line = fin.readline()
+
+    fin.close()
+
+    return sym_dict, trans_dict
+
+def apply_symmetry_operations(chain, sym_dict, trans_dict):
+    # convert atom positions in numpy array
+
+    chainID = chain.get_ID()
+
+    symmetrizations = [chain]
+    for key, symmetries in sym_dict.iteritems():
+        if chainID not in key:
+            continue
+
+        transformed_chain = copy.deepcopy(chain)
+        symmetrizations += symmetrize_chain(transformed_chain, sym_dict[key], trans_dict[key])
+
+    return merge_chains(symmetrizations)
+
+def merge_chains(chains):
+    chain = chains[0]
+
+    for ch in chains[1:]:
+        chain.set_atoms(chain.get_atoms() + ch.get_atoms())
+
+    return chain
+
+def symmetrize_chain(chain, symmetry, translation):
+
+    for i in range(int(len(symmetry) / 3)):
+        sym_op = symmetry[3 * i:3 * (i + 1), :]
+        trans = translation[3 * i:3 * (i + 1)]
+
+        for atom in chain.get_atoms():
+            atoms.transform(sym_op, trans)
+
+        # Would chain.transform() also work?
+        return chain
 
 def load_ff_database():
     dbase = np.array(
@@ -584,4 +595,3 @@ def load_WaasKirf_database():
         ]
     )
     return dbase
-!=!=
