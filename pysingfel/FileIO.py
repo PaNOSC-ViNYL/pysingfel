@@ -38,13 +38,14 @@ def saveAsDiffrOutFile(outputName, inputName, counter, detector_counts, detector
         f.create_dataset(group_name + 'angle', data=quaternion)
 
         # Link history from input pmi file into output diffr file
-        group_name_history = group_name + 'history/parent/detail/'
-        f[group_name_history + 'data'] = h5py.ExternalLink(inputName, 'data')
-        f[group_name_history + 'info'] = h5py.ExternalLink(inputName, 'info')
-        f[group_name_history + 'misc'] = h5py.ExternalLink(inputName, 'misc')
-        f[group_name_history + 'params'] = h5py.ExternalLink(inputName, 'params')
-        f[group_name_history + 'version'] = h5py.ExternalLink(inputName, 'version')
-        f[group_name + '/history/parent/parent'] = h5py.ExternalLink(inputName, 'history/parent')
+        if inputName is not None:
+            group_name_history = group_name + 'history/parent/detail/'
+            f[group_name_history + 'data'] = h5py.ExternalLink(inputName, 'data')
+            f[group_name_history + 'info'] = h5py.ExternalLink(inputName, 'info')
+            f[group_name_history + 'misc'] = h5py.ExternalLink(inputName, 'misc')
+            f[group_name_history + 'params'] = h5py.ExternalLink(inputName, 'params')
+            f[group_name_history + 'version'] = h5py.ExternalLink(inputName, 'version')
+            f[group_name + '/history/parent/parent'] = h5py.ExternalLink(inputName, 'history/parent')
 
         # Parameters
         if 'geom' not in f['params'].keys() and 'beam' not in f['params'].keys():

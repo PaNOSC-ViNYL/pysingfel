@@ -23,20 +23,15 @@ class Particle(object):
         self.nFree = None  # Compton: number of free electrons
 
         if len(fname) != 0:
-            # If input is a pdb file.
-            if fname[0].split(".")[-1].lower() == "pdb":
-                self.readPDB(fname[0])
-
+            # read from pmi file to get info about radiation damage at a certain time slice
+            if len(fname) == 1:
+                datasetname = 'data/snp_0000001'  # default dataset name -> set to be initial time
+                self.readh5File(fname[0], datasetname)
+            elif len(fname) == 2:
+                # both pmi file and the time slice (dataset) are provided
+                self.readh5File(fname[0], fname[1])
             else:
-                # read from pmi file to get info about radiation damage at a certain time slice
-                if len(fname) == 1:
-                    datasetname = 'data/snp_0000001'  # default dataset name -> set to be initial time
-                    self.readh5File(fname[0], datasetname)
-                elif len(fname) == 2:
-                    # both pmi file and the time slice (dataset) are provided
-                    self.readh5File(fname[0], fname[1])
-                else:
-                    raise ValueError('Wrong number of parameters to construct the particle object!')
+                raise ValueError('Wrong number of parameters to construct the particle object!')
 
     # setters and getters
     def set_atomPos(self, pos):
@@ -156,43 +151,39 @@ class Particle(object):
             raise ValueError('Unrecognized form factor source!')
 
 
-def symmpdb(fname):
+def symmpdb(fname, use_old_implementation=False):
+
     """
-    Read REMARK 350 BIOMT from pdb file, which specify the necessary transformation to get the full protein structure.
+    Get the molecular structure with symmety operations applied (corresponding to remark 350, i.e. not the crystallographic
+    operations that make up the unit cell.). Optionally, discard all atoms with occupancy lower than occ
     Return the atom position as well as atom type in numpy arrays.
     """
-    AtomTypes = {'H': 1, 'C': 6, 'N': 7, 'O': 8, 'P': 15, 'S': 16}
+    if use_old_implementation:
+        return _symmpdb(fname)
 
-    fin = open(fname, 'r')
+    import periodictable
+    symbols = [[el.symbol, el.number] for  el in periodictable.elements]
+    from Bio import PDB
+    parser = PDB.Parser()
+    structure = parser('structure', fname)
 
-    atoms_dict = {}  # dict to save atom positions and chain id
-    sym_dict = {}  # dict to save the symmetry rotations and chain id
-    trans_dict = {}  # dict to save the symmetry translations and chain id
-    atom_count = 0
-    line = fin.readline()
-    while line:
-        # read atom coordinates
-        if line[0:4] == 'ATOM' or line[0:6] == 'HETATM':
-            atom_count += 1
-            chainID = line[21]
-            if chainID not in atoms_dict.keys():
-                atoms_dict[chainID] = []
-            # occupany > 50 % || one of either if occupany = 50 %
-            if (float(line[56:60]) > 0.5) or (float(line[56:60]) == 0.5 and line[16] != 'B'):
-                # [x, y, z, atomtype, charge]
-                tmp = [float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip()), 0, 0]
-                if line[76:78].strip() in AtomTypes.keys():
-                    tmp[3] = AtomTypes[line[76:78].strip()]
-                    charge = line[78:80].strip()  # charge info, should be in the form of '2+' or '1-' if not blank
-                    if len(charge) is not 0:
-                        if len(charge) is not 2:
-                            print 'Could not interpret the charge information!\n', line
-                        else:
-                            charge = int(charge[1] + charge[0])  # swap the order to be '+2' or '-1' and convert to int
-                            tmp[4] = charge
-                    atoms_dict[chainID].append(tmp)
-                else:
-                    print 'Unknown element or wrong line: \n', line
+    all_atoms = PDB.Selection.unfold_entities(structure, 'A')
+
+    ordered_unsymmetrized_atoms = []
+    for atom in all_atoms:
+        if atom.get_occupancy() < 0.5:
+            continue
+
+        if atom.get_altloc() != 'B':
+            continue
+        #if hasattr(atom, 'disordered_select'):
+            #atom.disordered_select('A')
+
+    ordered_unsymmetrized_atoms = [[atom.get_coord()[0], atom.get_coord()[1],atom.get_coord()[2], getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in all_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
+
+def parse_symmetry_operations(pdb_fname):
+    # Get symmetry operations.
+    with open(pdb_fname, 'r') as fin:
 
         # read symmetry transformations
         flag1 = 'REMARK 350 APPLY THE FOLLOWING TO CHAINS: '
@@ -593,4 +584,4 @@ def load_WaasKirf_database():
         ]
     )
     return dbase
-
+!=!=
