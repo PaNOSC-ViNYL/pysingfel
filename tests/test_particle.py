@@ -2,14 +2,37 @@ import unittest
 import numpy as np
 
 from pysingfel.radiationDamageMPI import *
+from pysingfel.particle import symmpdb, merge_chains, parse_symmetry_operations, apply_symmetry_operations, symmetrize_chain
+
+from Bio import PDB
 
 
 class particleTests(unittest.TestCase):
+
+    def setUp(self):
+        parser = PDB.PDBParser()
+        self.__structure = parser.get_structure('structure', 'test_files/1uf2.pdb')
+
     def test_readPDB(self):
         p = Particle()
         p.readPDB('test_files/5g3x.pdb', ff='WK')
 
         self.assertTrue(isinstance(p.ffTable, np.ndarray))
+
+
+    def test_merge_chains(self):
+        """ Test that merging a number of pdb chains into one chain works. """
+
+        structure = self.__structure
+
+        chains = [c for c in structure.get_chains()]
+        print len(chains)
+
+        print len([a for a in structure.get_atoms()])
+        merger = merge_chains(chains)
+
+        self.assertEqual( len([a for a in structure.get_atoms()]), len([a for a in merger.get_atoms()]) )
+
 
     def test_calFromPDB(self):
         p = Particle()

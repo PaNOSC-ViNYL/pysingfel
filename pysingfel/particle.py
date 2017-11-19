@@ -1,5 +1,5 @@
-import h5py
-import numpy as np
+fmport h5py
+fmport numpy as np
 
 
 class Particle(object):
@@ -170,15 +170,14 @@ def symmpdb(fname, use_old_implementation=False):
     # Get operations.
     symmetries, translations = parse_symmetry_operations(fname)
 
-    symmetrized_atoms = []
+    atoms = []
     for chain in structure.get_chains():
         symmetrized_chain =  apply_symmetry_operations( chain, symmetries, translations )
 
         chain_atoms = symmetrized_chain.get_atoms()
 
-
-        symmetrized_atoms += [[atom.get_coord()[0], atom.get_coord()[1],atom.get_coord()[2], getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in chain_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
-
+        for atom in chain_atoms:
+            atoms += [[atom.get_coord()[0], atom.get_coord()[1],atom.get_coord()[2], getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in chain_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
 
     x_max = np.max(atoms[:, 0])
     x_min = np.min(atoms[:, 0])
@@ -194,7 +193,6 @@ def symmpdb(fname, use_old_implementation=False):
 
     # sort based on atomtype and charge
     return atoms[np.lexsort((atoms[:,4].astype(int), atoms[:,3].astype(int)))]
-
 
 def parse_symmetry_operations(pdb_fname):
     # Get symmetry operations.
@@ -249,7 +247,7 @@ def apply_symmetry_operations(chain, sym_dict, trans_dict):
     return merge_chains(symmetrizations)
 
 def merge_chains(chains):
-    chain = chains[0]
+
 
     for ch in chains[1:]:
         chain.set_atoms(chain.get_atoms() + ch.get_atoms())
