@@ -29,9 +29,9 @@ class particleTests(unittest.TestCase):
         print len(chains)
 
         print len([a for a in structure.get_atoms()])
-        merger = merge_chains(chains)
+        merged_chain_atoms_list = merge_chains(chains)
 
-        self.assertEqual( len([a for a in structure.get_atoms()]), len([a for a in merger.get_atoms()]) )
+        self.assertEqual( len([a for a in structure.get_atoms()]), len(merged_chain_atoms_list) )
 
 
     def test_calFromPDB(self):

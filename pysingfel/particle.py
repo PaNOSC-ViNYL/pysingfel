@@ -1,5 +1,6 @@
-fmport h5py
-fmport numpy as np
+import h5py
+import numpy as np
+from Bio import PDB
 
 
 class Particle(object):
@@ -248,11 +249,11 @@ def apply_symmetry_operations(chain, sym_dict, trans_dict):
 
 def merge_chains(chains):
 
+    atoms = []
+    for chain in chains:
+        atoms += PDB.Selection.unfold_entities(chain, 'A')
 
-    for ch in chains[1:]:
-        chain.set_atoms(chain.get_atoms() + ch.get_atoms())
-
-    return chain
+    return atoms
 
 def symmetrize_chain(chain, symmetry, translation):
 
