@@ -11,6 +11,14 @@ class particleTests(unittest.TestCase):
 
         self.assertTrue(isinstance(p.ffTable, np.ndarray))
 
+    def test_symmpdb(self):
+        """ Test the symmetrization utility. """
+        pdb_file = 'test_files/5udc.pdb'
+
+        atoms =symmpdb(pdb_file)
+
+        print atoms[0]
+
     def test_calFromPDB(self):
         p = Particle()
         p.readPDB('test_files/5g3x.pdb', ff='WK')

@@ -164,7 +164,7 @@ def symmpdb(fname):
     """
 
     AtomTypes = {}
-    symbols = [el.symbol for el in elements]
+    symbols = [el.symbol.upper() for el in elements]
     numbers = [el.number for el in elements]
 
     for symbol, number in zip( symbols, numbers):
@@ -188,7 +188,8 @@ def symmpdb(fname):
             if (float(line[56:60]) > 0.5) or (float(line[56:60]) == 0.5 and line[16] != 'B'):
                 # [x, y, z, atomtype, charge]
                 tmp = [float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip()), 0, 0]
-                if line[76:78].strip() in AtomTypes.keys():
+                symbol =line[76:78].strip()
+                if symbol in AtomTypes.keys():
                     tmp[3] = AtomTypes[line[76:78].strip()]
                     charge = line[78:80].strip()  # charge info, should be in the form of '2+' or '1-' if not blank
                     if len(charge) is not 0:
@@ -199,7 +200,7 @@ def symmpdb(fname):
                             tmp[4] = charge
                     atoms_dict[chainID].append(tmp)
                 else:
-                    print 'Unknown element or wrong line: \n', line
+                    print '%s: Unknown element symbol in line: %s\n' % (symbol, line)
 
         # read symmetry transformations
         flag1 = 'REMARK 350 APPLY THE FOLLOWING TO CHAINS: '
