@@ -1,6 +1,7 @@
 import copy
 import h5py
 import numpy
+import periodictable
 
 from Bio import PDB
 
@@ -165,10 +166,10 @@ def symmpdb(fname, use_old_implementation=False):
         return _symmpdb(fname)
 
     # Get a pdb parser.
-    parser = PDB.Parser()
+    parser = PDB.PDBParser()
 
     # Parse the pdb file.
-    structure = parser('structure', fname)
+    structure = parser.get_structure('structure', fname)
 
     # Get symmetry operations (rotations and translations).
     rotations, translations = parse_symmetry_operations(fname)
@@ -184,9 +185,12 @@ def symmpdb(fname, use_old_implementation=False):
 
         # Loop over atoms in the chain.
         for atom in merged_symmetrized_chain_atoms:
-            # Append coordinates, element number, and charge to the atoms[].
+            # Append coordinates, element number, and charge to the atoms[]
+            if atom.get_occupancy() < 0.5 or (atom.get_occupancy() == 0.5 and atom.get_altloc() != 'A'):
+                continue
+
             x,y,z = atom.get_coord()
-            atoms += [[x, y, z, getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in chain_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
+            atoms.append([x, y, z, getattr(periodictable, atom.element.title()).number, atom.get_charge()] )
 
     # Shift all positions by geometric median.
     x_max = numpy.max(atoms[:, 0])
@@ -273,7 +277,7 @@ def apply_symmetry_operations(chain, rot_dict, trans_dict):
             # Make working copy.
             transformed_chain = copy.deepcopy(chain)
             # Apply rotation and translation.
-            transrotate_chain(transformed_chain, symmetry, translation)
+            transrotate_chain(transformed_chain, rotation, translation)
             # Store away.
             transformed_chains.append( transformed_chain )
 

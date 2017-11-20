@@ -28,6 +28,11 @@ class particleTests(unittest.TestCase):
         """ Test the symmetrization of a pdb entry. """
         fname = self.__2bfu_fname
 
+        symmetrized_sorted_atoms = symmpdb(fname)
+
+        print symmetrized_sorted_atoms[0]
+
+
     def test_merge_chains(self):
         """ Test that merging a number of pdb chains into one chain works. """
 
