@@ -38,7 +38,7 @@ def saveAsDiffrOutFile(outputName, inputName, counter, detector_counts, detector
         f.create_dataset(group_name + 'angle', data=quaternion)
 
         # Link history from input pmi file into output diffr file
-        if inputName.split('.')[-1] == '.h5':
+        if inputName is not None and inputName.split('.')[-1] == '.h5':
             group_name_history = group_name + 'history/parent/detail/'
             f[group_name_history + 'data'] = h5py.ExternalLink(inputName, 'data')
             f[group_name_history + 'info'] = h5py.ExternalLink(inputName, 'info')
