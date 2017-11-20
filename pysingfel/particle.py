@@ -1,5 +1,7 @@
+import copy
 import h5py
-import numpy as np
+import numpy
+
 from Bio import PDB
 
 
@@ -51,15 +53,15 @@ class Particle(object):
         with h5py.File(fname, 'r') as f:
             atomPos = f.get(datasetname + '/r').value  # atom position -> N x 3 array
             ionList = f.get(datasetname + '/xyz').value  # length = N, contain atom type id for each atom
-            self.atomPos = atomPos[np.argsort(ionList)]
-            _, idx = np.unique(np.sort(ionList), return_index=True)
-            self.SplitIdx = np.append(idx, [len(ionList)])
+            self.atomPos = atomPos[numpy.argsort(ionList)]
+            _, idx = numpy.unique(numpy.sort(ionList), return_index=True)
+            self.SplitIdx = numpy.append(idx, [len(ionList)])
 
             # get atom factor table, sorted by atom type id
             atomType = f.get(datasetname + '/T').value  # atom type array, each type is represented by an integer
             self.numAtomTypes = len(atomType)
             ffTable = f.get(datasetname + '/ff').value
-            self.ffTable = ffTable[np.argsort(atomType)]
+            self.ffTable = ffTable[numpy.argsort(atomType)]
 
             self.qSample = f.get(datasetname + '/halfQ').value
             self.numQSamples = len(self.qSample)
@@ -78,19 +80,19 @@ class Particle(object):
         atoms = symmpdb(fname)
         self.atomPos = atoms[:, 0:3] / 10**10  # convert unit from Angstroms to m
         tmp = (100 * atoms[:, 3] + atoms[:, 4]).astype(int)  # hack to get split idx from the sorted atom array
-        atomType, idx = np.unique( np.sort(tmp), return_index=True )
+        atomType, idx = numpy.unique( numpy.sort(tmp), return_index=True )
         self.numAtomTypes = len(atomType)
-        self.SplitIdx = np.append(idx, [len(tmp)])
+        self.SplitIdx = numpy.append(idx, [len(tmp)])
 
         if ff == 'WK':
             # set up q samples and compton
-            qs = np.linspace(0,10,101) / (2.0 * np.pi * 0.529177206 * 2.0)
+            qs = numpy.linspace(0,10,101) / (2.0 * numpy.pi * 0.529177206 * 2.0)
             self.qSample = qs
             self.comptonQSample = qs
             self.numQSamples = len(qs)
             self.numComptonQSamples = len(qs)
-            self.sBound = np.zeros(self.numQSamples)
-            self.nFree = np.zeros(self.numQSamples)
+            self.sBound = numpy.zeros(self.numQSamples)
+            self.nFree = numpy.zeros(self.numQSamples)
 
             # calculate form factor using WaasKirf coeffs table
             WKdbase = load_WaasKirf_database()
@@ -98,14 +100,14 @@ class Particle(object):
                 if i == 0:
                     ZZ = int(atoms[i, 3])  # atom type
                     qq = int(atoms[i, 4])  # charge
-                    idx = np.where(WKdbase[:, 0] == ZZ)[0]
+                    idx = numpy.where(WKdbase[:, 0] == ZZ)[0]
                     flag = True
                     for j in idx:
                         if WKdbase[j, 1] == qq:
                             [a1, a2, a3, a4, a5, c, b1, b2, b3, b4, b5] = WKdbase[j, 2:]
-                            self.ffTable = c + a1 * np.exp(-b1 * self.qSample**2) + a2 * np.exp(-b2 * self.qSample**2) + \
-                                           a3 * np.exp(-b3 * self.qSample**2) + a4 * np.exp(-b4 * self.qSample**2) + \
-                                           a5 * np.exp(-b5 * self.qSample**2)
+                            self.ffTable = c + a1 * numpy.exp(-b1 * self.qSample**2) + a2 * numpy.exp(-b2 * self.qSample**2) + \
+                                           a3 * numpy.exp(-b3 * self.qSample**2) + a4 * numpy.exp(-b4 * self.qSample**2) + \
+                                           a5 * numpy.exp(-b5 * self.qSample**2)
                             flag = False
                             break
                     if flag:
@@ -114,15 +116,15 @@ class Particle(object):
                 else:
                     ZZ = int(atoms[i, 3])  # atom type
                     qq = int(atoms[i, 4])  # charge
-                    idx = np.where(WKdbase[:, 0] == ZZ)[0]
+                    idx = numpy.where(WKdbase[:, 0] == ZZ)[0]
                     flag = True
                     for j in idx:
                         if WKdbase[j, 1] == qq:
                             [a1, a2, a3, a4, a5, c, b1, b2, b3, b4, b5] = WKdbase[j, 2:]
-                            ff = c + a1 * np.exp(-b1 * self.qSample ** 2) + a2 * np.exp(-b2 * self.qSample ** 2) + \
-                                a3 * np.exp(-b3 * self.qSample ** 2) + a4 * np.exp(-b4 * self.qSample ** 2) + \
-                                a5 * np.exp(-b5 * self.qSample**2)
-                            self.ffTable = np.vstack((self.ffTable, ff))
+                            ff = c + a1 * numpy.exp(-b1 * self.qSample ** 2) + a2 * numpy.exp(-b2 * self.qSample ** 2) + \
+                                a3 * numpy.exp(-b3 * self.qSample ** 2) + a4 * numpy.exp(-b4 * self.qSample ** 2) + \
+                                a5 * numpy.exp(-b5 * self.qSample**2)
+                            self.ffTable = numpy.vstack((self.ffTable, ff))
                             flag = False
                             break
                     if flag:
@@ -139,15 +141,15 @@ class Particle(object):
                 else:
                     ZZ = int(atoms[i, 3])  # atom type
                     qq = int(atoms[i, 4])  # charge
-                    self.ffTable = np.vstack( (self.ffTable, ffdbase[:, ZZ] * (ZZ - qq) / (ZZ * 1.0)) )
+                    self.ffTable = numpy.vstack( (self.ffTable, ffdbase[:, ZZ] * (ZZ - qq) / (ZZ * 1.0)) )
 
             # set up q samples and compton
-            self.qSample = ffdbase[:,0] / ( 2.0 * np.pi * 0.529177206 * 2.0 )
-            self.comptonQSample = ffdbase[:,0] / ( 2.0 * np.pi * 0.529177206 * 2.0 )
+            self.qSample = ffdbase[:,0] / ( 2.0 * numpy.pi * 0.529177206 * 2.0 )
+            self.comptonQSample = ffdbase[:,0] / ( 2.0 * numpy.pi * 0.529177206 * 2.0 )
             self.numQSamples = len(ffdbase[:,0])
             self.numComptonQSamples = len(ffdbase[:,0])
-            self.sBound = np.zeros(self.numQSamples)
-            self.nFree = np.zeros(self.numQSamples)
+            self.sBound = numpy.zeros(self.numQSamples)
+            self.nFree = numpy.zeros(self.numQSamples)
         else:
             raise ValueError('Unrecognized form factor source!')
 
@@ -162,38 +164,44 @@ def symmpdb(fname, use_old_implementation=False):
     if use_old_implementation:
         return _symmpdb(fname)
 
-    import periodictable
-    symbols = [[el.symbol, el.number] for  el in periodictable.elements]
-    from Bio import PDB
+    # Get a pdb parser.
     parser = PDB.Parser()
+
+    # Parse the pdb file.
     structure = parser('structure', fname)
 
-    # Get operations.
-    symmetries, translations = parse_symmetry_operations(fname)
+    # Get symmetry operations (rotations and translations).
+    rotations, translations = parse_symmetry_operations(fname)
 
+    # Setup empty list to store symmetrized atoms in.
     atoms = []
+
+    # Loop over all chains.
     for chain in structure.get_chains():
-        symmetrized_chain =  apply_symmetry_operations( chain, symmetries, translations )
 
-        chain_atoms = symmetrized_chain.get_atoms()
+        # Get symmetrized atoms in this chain.
+        merged_symmetrized_chain_atoms =  apply_symmetry_operations( chain, rotations, translations )
 
-        for atom in chain_atoms:
-            atoms += [[atom.get_coord()[0], atom.get_coord()[1],atom.get_coord()[2], getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in chain_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
+        # Loop over atoms in the chain.
+        for atom in merged_symmetrized_chain_atoms:
+            # Append coordinates, element number, and charge to the atoms[].
+            x,y,z = atom.get_coord()
+            atoms += [[x, y, z, getattr(periodictable, atom.element.title()).number, atom.get_charge()] for atom in chain_atoms if (atom.get_occupancy() > 0.5 and atom.get_altloc() == 'A') ]
 
-    x_max = np.max(atoms[:, 0])
-    x_min = np.min(atoms[:, 0])
-    y_max = np.max(atoms[:, 1])
-    y_min = np.min(atoms[:, 1])
-    z_max = np.max(atoms[:, 2])
-    z_min = np.min(atoms[:, 2])
+    # Shift all positions by geometric median.
+    x_max = numpy.max(atoms[:, 0])
+    x_min = numpy.min(atoms[:, 0])
+    y_max = numpy.max(atoms[:, 1])
+    y_min = numpy.min(atoms[:, 1])
+    z_max = numpy.max(atoms[:, 2])
+    z_min = numpy.min(atoms[:, 2])
 
-    # symmetrize atom coordinates
     atoms[:, 0] = atoms[:, 0] - (x_max + x_min) / 2
     atoms[:, 1] = atoms[:, 1] - (y_max + y_min) / 2
     atoms[:, 2] = atoms[:, 2] - (z_max + z_min) / 2
 
     # sort based on atomtype and charge
-    return atoms[np.lexsort((atoms[:,4].astype(int), atoms[:,3].astype(int)))]
+    return atoms[numpy.lexsort((atoms[:,4].astype(int), atoms[:,3].astype(int)))]
 
 def parse_symmetry_operations(pdb_fname):
     # Get symmetry operations.
@@ -207,10 +215,13 @@ def parse_symmetry_operations(pdb_fname):
         flag1 = 'REMARK 350 APPLY THE FOLLOWING TO CHAINS: '
         flag2 = 'REMARK 350                    AND CHAINS: '
 
+        # Loop through lines
         line = fin.readline()
         while line:
+            # Search for the start of the REMARK 350 block.
             if line.startswith(flag1):
                 line = line.strip()
+                # Collect chain IDs to apply symmetry operations to.
                 chainIDs = line.replace(flag1, '').replace(',', '').split()
                 line = fin.readline().strip()
                 while line.startswith(flag2):
@@ -218,12 +229,15 @@ def parse_symmetry_operations(pdb_fname):
                     line = fin.readline().strip()
                 sys_tmp = []
                 trans_tmp = []
+                # Extract the matrix rows.
                 while line[13:18] == 'BIOMT':
                     sys_tmp.append([float(line[24:33]), float(line[34:43]), float(line[44:53])])
                     trans_tmp.append(float(line[58:68]))
                     line = fin.readline().strip()
-                sym_dict[tuple(chainIDs)] = np.asarray(sys_tmp)  # cannot use list as dict keys, but tuple works
-                trans_dict[tuple(chainIDs)] = np.asarray(trans_tmp)
+                # Rotations and translations are stored as row vectors on a dictionary. Chain IDs these operations apply to are stored as key.
+                sym_dict[tuple(chainIDs)] = numpy.asarray(sys_tmp)  # cannot use list as dict keys, but tuple works
+                trans_dict[tuple(chainIDs)] = numpy.asarray(trans_tmp)
+
                 continue
 
             line = fin.readline()
@@ -232,20 +246,48 @@ def parse_symmetry_operations(pdb_fname):
 
     return sym_dict, trans_dict
 
-def apply_symmetry_operations(chain, sym_dict, trans_dict):
+def apply_symmetry_operations(chain, rot_dict, trans_dict):
     # convert atom positions in numpy array
 
-    chainID = chain.get_ID()
+    # Need chain ID to test if operation applies.
+    chainID = chain.get_id()
 
-    symmetrizations = [chain]
-    for key, symmetries in sym_dict.iteritems():
+    print "Symmetrizing chain ", chainID
+
+    # List of transformed chains.
+    transformed_chains = []
+
+    # Loop over rotation
+    for key, rotations in rot_dict.iteritems():
         if chainID not in key:
             continue
+        rotations = numpy.array(rotations)
+        translations = numpy.array(trans_dict[key])
+        rot_shape = rotations.shape
 
-        transformed_chain = copy.deepcopy(chain)
-        symmetrizations += symmetrize_chain(transformed_chain, sym_dict[key], trans_dict[key])
+        number_of_operations = rot_shape[0] / 3
 
-    return merge_chains(symmetrizations)
+        rotations = rotations.reshape((number_of_operations, 3, 3))
+        translations = translations.reshape((number_of_operations, 3))
+        for rotation, translation in zip( rotations, translations):
+            # Make working copy.
+            transformed_chain = copy.deepcopy(chain)
+            # Apply rotation and translation.
+            transrotate_chain(transformed_chain, symmetry, translation)
+            # Store away.
+            transformed_chains.append( transformed_chain )
+
+    # Return the atom positions of all symmetrized chains merged into one list.
+    return merge_chains(transformed_chain)
+
+def transrotate_chain(chain, symmetry, translation):
+    """ Apply symmetry operations to a given chain. """
+
+    for atom in chain.get_atoms():
+        position = atom.get_vector().get_array()
+        new_position = numpy.dot(symmetry, position) +  translation
+
+        atom.set_coord(new_position)
 
 def merge_chains(chains):
 
@@ -255,20 +297,8 @@ def merge_chains(chains):
 
     return atoms
 
-def symmetrize_chain(chain, symmetry, translation):
-
-    for i in range(int(len(symmetry) / 3)):
-        sym_op = symmetry[3 * i:3 * (i + 1), :]
-        trans = translation[3 * i:3 * (i + 1)]
-
-        for atom in chain.get_atoms():
-            atoms.transform(sym_op, trans)
-
-        # Would chain.transform() also work?
-        return chain
-
 def load_ff_database():
-    dbase = np.array(
+    dbase = numpy.array(
             [
     [ 0.00000000 , 1.00000000 , 2.00000000 , 3.00000000 , 4.00000000 , 5.00000000 , 6.00000000 , 7.00000000 , 8.00000000 , 9.00000000 , 10.00000000 , 11.00000000 , 12.00000000 , 13.00000000 , 14.00000000 , 15.00000000 , 16.00000000 , 17.00000000 , 18.00000000 , 19.00000000 , 20.00000000 , 21.00000000 , 22.00000000 , 23.00000000 , 24.00000000 , 25.00000000 , 26.00000000 , 27.00000000 , 28.00000000 , 29.00000000 , 30.00000000 , 31.00000000 , 32.00000000 , 33.00000000 , 34.00000000 , 35.00000000 , 36.00000000 , 37.00000000 , 38.00000000 , 39.00000000 , 40.00000000 , 41.00000000 , 42.00000000 , 43.00000000 , 44.00000000 , 45.00000000 , 46.00000000 , 47.00000000 , 48.00000000 , 49.00000000 , 50.00000000 , 51.00000000 , 52.00000000 , 53.00000000 , 54.00000000 , 55.00000000 , 56.00000000 , 57.00000000 , 58.00000000 , 59.00000000 , 60.00000000 , 61.00000000 , 62.00000000 , 63.00000000 , 64.00000000 , 65.00000000 , 66.00000000 , 67.00000000 , 68.00000000 , 69.00000000 , 70.00000000 , 71.00000000 , 72.00000000 , 73.00000000 , 74.00000000 , 75.00000000 , 76.00000000 , 77.00000000 , 78.00000000 , 79.00000000 , 80.00000000 , 81.00000000 , 82.00000000 , 83.00000000 , 84.00000000 , 85.00000000 , 86.00000000 , 87.00000000 , 88.00000000 , 89.00000000 , 90.00000000 , 91.00000000 , 92.00000000 , 93.00000000 , 94.00000000 , 95.00000000 , 96.00000000 , 97.00000000 , 98.00000000 , 99.00000000 , 100.00000000 ] ,
     [ 0.10000000 , 0.99501869 , 1.99589518 , 2.97109688 , 3.97186951 , 4.97376297 , 5.97710119 , 6.97983622 , 7.98198772 , 8.98370590 , 9.98510701 , 10.95863233 , 11.95411841 , 12.94697205 , 13.94883406 , 14.95181561 , 15.95472957 , 16.95738950 , 17.95978500 , 18.92347251 , 19.91505510 , 20.92051573 , 21.92515832 , 22.92918270 , 23.93272217 , 24.93587259 , 25.93870298 , 26.94126494 , 27.94359833 , 28.94573704 , 29.94770446 , 30.93632139 , 31.93476608 , 32.93527378 , 33.93636001 , 34.93766419 , 35.93905535 , 36.89860308 , 37.88700546 , 38.89138618 , 39.89563164 , 40.89945789 , 41.90291796 , 42.90607326 , 43.90897276 , 44.91165362 , 45.91414473 , 46.91646886 , 47.91864602 , 48.90557917 , 49.90242200 , 50.90177205 , 51.90202494 , 52.90273336 , 53.90370475 , 54.85504426 , 55.83966594 , 56.84315999 , 57.84642273 , 58.84948038 , 59.85237085 , 60.85511933 , 61.85773122 , 62.86022128 , 63.86261346 , 64.86490228 , 65.86709654 , 66.86920692 , 67.87124385 , 68.87315927 , 65.70484550 , 70.87732340 , 71.87995066 , 72.88245856 , 73.88481283 , 74.88702796 , 75.88912120 , 76.89111007 , 77.89300402 , 78.89481198 , 79.89654525 , 80.88208473 , 81.87752692 , 82.87569085 , 83.87492735 , 84.87474801 , 85.87494376 , 86.82204392 , 87.80407602 , 88.80756308 , 89.81077554 , 90.81379738 , 91.81664367 , 92.81934342 , 93.82192852 , 94.82440199 , 95.82677312 , 96.82905187 , 97.83125374 , 98.83338014 , 99.83543301 ] ,
@@ -378,7 +408,7 @@ def load_ff_database():
 
 
 def load_WaasKirf_database():
-    dbase = np.array(
+    dbase = numpy.array(
         [
             [ 1.000000,  0.000000,  0.413048,  0.294953,  0.187491,  0.080701,  0.023736,  0.000049, 15.569946, 32.398468,  5.711404, 61.889874,  1.334118],
             [ 1.000000, -1.000000,  0.702260,  0.763666,  0.248678,  0.261323,  0.023017,  0.000425, 23.945604, 74.897919,  6.773289,233.583450,  1.337531],
