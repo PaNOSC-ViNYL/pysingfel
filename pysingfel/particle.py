@@ -1,3 +1,4 @@
+from periodictable import elements
 import h5py
 import numpy as np
 
@@ -161,7 +162,13 @@ def symmpdb(fname):
     Read REMARK 350 BIOMT from pdb file, which specify the necessary transformation to get the full protein structure.
     Return the atom position as well as atom type in numpy arrays.
     """
-    AtomTypes = {'H': 1, 'C': 6, 'N': 7, 'O': 8, 'P': 15, 'S': 16}
+
+    AtomTypes = {}
+    symbols = [el.symbol for el in elements]
+    numbers = [el.number for el in elements]
+
+    for symbol, number in zip( symbols, numbers):
+        AtomTypes[symbol] = number
 
     fin = open(fname, 'r')
 
