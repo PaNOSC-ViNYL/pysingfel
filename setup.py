@@ -7,6 +7,7 @@ requirements = [
             'scipy',
             'mpi4py',
             'h5py',
+            'periodictable',
       ]
 
 setup(name='pysingfel',
