@@ -63,5 +63,5 @@ before_script:
   - ulimit -c unlimited
   - mpirun --version
 script:
-  - cd $TRAVIS_BUILD_DIR/tests/
-  - bash run_all_tests.sh
+  - cd $TRAVIS_BUILD_DIR/CI
+  - bash build_and_test.sh
