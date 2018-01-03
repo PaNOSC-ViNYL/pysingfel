@@ -1,5 +1,5 @@
-from toolbox import *
-from FileIO import *
+from .toolbox import *
+from .FileIO import *
 import os
 
 

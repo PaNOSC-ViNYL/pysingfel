@@ -17,7 +17,7 @@ class particleTests(unittest.TestCase):
 
         atoms =symmpdb(pdb_file)
 
-        print atoms[0]
+        print(atoms[0])
 
     def test_calFromPDB(self):
         p = Particle()

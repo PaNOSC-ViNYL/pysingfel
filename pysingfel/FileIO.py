@@ -48,7 +48,7 @@ def saveAsDiffrOutFile(outputName, inputName, counter, detector_counts, detector
             f[group_name + '/history/parent/parent'] = h5py.ExternalLink(inputName, 'history/parent')
 
         # Parameters
-        if 'geom' not in f['params'].keys() and 'beam' not in f['params'].keys():
+        if 'geom' not in list(f['params'].keys()) and 'beam' not in list(f['params'].keys()):
             # Geometry
             f.create_dataset('params/geom/detectorDist', data=det.get_detector_dist())
             f.create_dataset('params/geom/pixelWidth', data=det.get_pix_width())

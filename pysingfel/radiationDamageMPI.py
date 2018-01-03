@@ -29,7 +29,7 @@ def main(parameters=None):
 
     if rank == 0:
         end = time.time()
-        print 'Finished: ', end - start, ' seconds.'
+        print('Finished: ', end - start, ' seconds.')
 
 
 def master_diffract(comm, parameters):

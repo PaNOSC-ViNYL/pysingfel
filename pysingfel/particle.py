@@ -114,7 +114,7 @@ class Particle(object):
                             flag = False
                             break
                     if flag:
-                        print 'Atom number = ' + str(ZZ) + ' with charge ' + str(qq)
+                        print('Atom number = ' + str(ZZ) + ' with charge ' + str(qq))
                         raise ValueError('Unrecognized atom type!')
                 else:
                     ZZ = int(atoms[i, 3])  # atom type
@@ -131,7 +131,7 @@ class Particle(object):
                             flag = False
                             break
                     if flag:
-                        print 'Atom number = ' + str(ZZ) + ' with charge ' + str(qq)
+                        print('Atom number = ' + str(ZZ) + ' with charge ' + str(qq))
                         raise ValueError('Unrecognized atom type!')
         elif ff == 'pmi':
             # set up ff table
@@ -182,25 +182,25 @@ def symmpdb(fname):
         if line[0:4] == 'ATOM' or line[0:6] == 'HETATM':
             atom_count += 1
             chainID = line[21]
-            if chainID not in atoms_dict.keys():
+            if chainID not in list(atoms_dict.keys()):
                 atoms_dict[chainID] = []
             # occupany > 50 % || one of either if occupany = 50 %
             if (float(line[56:60]) > 0.5) or (float(line[56:60]) == 0.5 and line[16] != 'B'):
                 # [x, y, z, atomtype, charge]
                 tmp = [float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip()), 0, 0]
                 symbol =line[76:78].strip()
-                if symbol in AtomTypes.keys():
+                if symbol in list(AtomTypes.keys()):
                     tmp[3] = AtomTypes[line[76:78].strip()]
                     charge = line[78:80].strip()  # charge info, should be in the form of '2+' or '1-' if not blank
                     if len(charge) is not 0:
                         if len(charge) is not 2:
-                            print 'Could not interpret the charge information!\n', line
+                            print('Could not interpret the charge information!\n', line)
                         else:
                             charge = int(charge[1] + charge[0])  # swap the order to be '+2' or '-1' and convert to int
                             tmp[4] = charge
                     atoms_dict[chainID].append(tmp)
                 else:
-                    print '%s: Unknown element symbol in line: %s\n' % (symbol, line)
+                    print('%s: Unknown element symbol in line: %s\n' % (symbol, line))
 
         # read symmetry transformations
         flag1 = 'REMARK 350 APPLY THE FOLLOWING TO CHAINS: '
@@ -227,12 +227,12 @@ def symmpdb(fname):
     fin.close()
 
     # convert atom positions in numpy array
-    for chainID in atoms_dict.keys():
+    for chainID in list(atoms_dict.keys()):
         atoms_dict[chainID] = np.asarray(atoms_dict[chainID])
 
     atoms = []
 
-    for chainIDs in sym_dict.keys():
+    for chainIDs in list(sym_dict.keys()):
         atoms_array = []
         for chainID in chainIDs:
             if len(atoms_array) == 0:
@@ -251,8 +251,8 @@ def symmpdb(fname):
                 atoms = np.vstack((atoms, atoms_array))
 
     # if no REMARK 350 provided, then save atoms_dict in atoms directly
-    if not sym_dict.keys():
-        for chainID in atoms_dict.keys():
+    if not list(sym_dict.keys()):
+        for chainID in list(atoms_dict.keys()):
             if len(atoms) == 0:
                 atoms = atoms_dict[chainID]
             else:
