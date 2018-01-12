@@ -54,10 +54,10 @@ def saveAsDiffrOutFile(outputName, inputName, counter, detector_counts, detector
             f.create_dataset('params/geom/pixelWidth', data=det.get_pix_width())
             f.create_dataset('params/geom/pixelHeight', data=det.get_pix_height())
             f.create_dataset('params/geom/mask', data=np.ones((det.py, det.px)))
-            f.create_dataset('params/beam/focusArea', data=beam.get_focus_area())
 
             # Photons
             f.create_dataset('params/beam/photonEnergy', data=beam.get_photon_energy())
+            f.create_dataset('params/beam/focusArea', data=beam.get_focus_area())
 
 
 

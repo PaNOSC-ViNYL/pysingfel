@@ -76,7 +76,7 @@ def slave_diffract(comm, parameters):
     myQuaternions = generateRotations(uniformRotation, rotationAxis, ntasks)
 
     # Setup output file
-    outputName = parameters['outputDir'] + '/diffr_out_' + '{0:07}'.format(comm.Get_rank()) + '.h5'
+    outputName = os.path.join(parameters['outputDir'], 'diffr_out_%07d.h5' % (comm.Get_rank()))
     if os.path.exists(outputName):
         os.remove(outputName)
     prepH5(outputName)

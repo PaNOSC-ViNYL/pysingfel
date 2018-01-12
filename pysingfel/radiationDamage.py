@@ -109,7 +109,7 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     quaternion = myQuaternions[counter, :]
 
     # Input file
-    inputName = inputDir + '/pmi_out_' + '{0:07}'.format(pmiID) + '.h5'
+    inputName = os.path.join(inputDir, 'pmi_out_%07d.h5' % (pmiID) )
 
     # Set up diffraction geometry
     if not givenPhotonEnergy:
@@ -130,7 +130,7 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
         timeSlice += sliceInterval
 
         # load particle information
-        datasetname = '/data/snp_' + '{0:07}'.format(timeSlice)
+        datasetname = '/data/snp_%07d' % (timeSlice)
         particle = Particle(inputName, datasetname)
         rotateParticle(quaternion, particle)
         if not givenFluence:
