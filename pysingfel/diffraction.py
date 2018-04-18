@@ -25,6 +25,7 @@ def calculate_atomicFactor(particle, detector):
     """
     f_hkl = np.zeros((detector.py, detector.px, particle.numAtomTypes))
     q_mod_Bragg = detector.q_mod * 1e-10/2.
+
     for atm in range(particle.numAtomTypes):
         cs = CubicSpline(particle.qSample, particle.ffTable[atm, :])  # Use cubic spline
         f_hkl[:, :, atm] = cs(q_mod_Bragg)  # interpolate

@@ -133,6 +133,11 @@ class Particle(object):
                     if flag:
                         print('Atom number = ' + str(ZZ) + ' with charge ' + str(qq))
                         raise ValueError('Unrecognized atom type!')
+
+            # If number of species is 1, increase rank of ff table to make it indexable by two indices.
+            if len(self.ffTable.shape) == 1:
+                self.ffTable = np.array([self.ffTable,])
+
         elif ff == 'pmi':
             # set up ff table
             ffdbase = load_ff_database()
@@ -145,6 +150,8 @@ class Particle(object):
                     ZZ = int(atoms[i, 3])  # atom type
                     qq = int(atoms[i, 4])  # charge
                     self.ffTable = np.vstack( (self.ffTable, ffdbase[:, ZZ] * (ZZ - qq) / (ZZ * 1.0)) )
+            if len(self.ffTable.shape) == 1:
+                self.ffTable = np.array([self.ffTable,])
 
             # set up q samples and compton
             self.qSample = ffdbase[:,0] / ( 2.0 * np.pi * 0.529177206 * 2.0 )
