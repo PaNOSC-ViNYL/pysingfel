@@ -44,7 +44,15 @@ def setEnergyFromFile(fname, beam):
     Set photon energy from pmi file.
     """
     with h5py.File(fname, 'r') as f:
-        photon_energy = f.get('/history/parent/detail/params/photonEnergy').value
+        try:
+            photon_energy = f.get('/params/photon_energy').value
+        except:
+            # Legacy support: Try get from history.
+            try:
+                photon_energy = f.get('/history/parent/detail/params/photonEnergy').value
+            except:
+                raise
+
     beam.set_photon_energy(photon_energy)
 
 
@@ -53,8 +61,16 @@ def setFocusFromFile(fname, beam):
     Set beam focus from pmi file.
     """
     with h5py.File(fname, 'r') as f:
-        focus_xFWHM = f.get('/history/parent/detail/misc/xFWHM').value
-        focus_yFWHM = f.get('/history/parent/detail/misc/yFWHM').value
+        try:
+            focus_xFWHM = f.get('/params/focus/xFWHM').value
+            focus_yFWHM = f.get('/params/focus/yFWHM').value
+        except:
+            try:
+                focus_xFWHM = f.get('/history/parent/detail/misc/xFWHM').value
+                focus_yFWHM = f.get('/history/parent/detail/misc/yFWHM').value
+            except:
+                raise
+
     beam.set_focus(focus_xFWHM, focus_yFWHM, shape='ellipse')
 
 
@@ -68,7 +84,6 @@ def setFluenceFromFile(fname, timeSlice, sliceInterval, beam):
             datasetname = '/data/snp_' + '{0:07}'.format(timeSlice-i) + '/Nph'
             n_phot += f.get(datasetname).value
     beam.set_photonsPerPulse(n_phot)
-
 
 def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
     """
@@ -146,7 +161,10 @@ def MakeOneDiffr(myQuaternions, counter, parameters, outputName):
             Compton = np.zeros((py, px))
         photon_field = F_hkl_sq + Compton
         detector_intensity += photon_field
+
     detector_intensity *= det.solidAngle * det.PolarCorr * beam.get_photonsPerPulsePerArea()
+
+
     detector_counts = convert_to_poisson(detector_intensity)
     saveAsDiffrOutFile(outputName, inputName, counter, detector_counts, detector_intensity, quaternion, det, beam)
 
