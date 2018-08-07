@@ -44,9 +44,13 @@ def setEnergyFromFile(fname, beam):
     Set photon energy from pmi file.
     """
     with h5py.File(fname, 'r') as f:
-        try:
+        if "photon_energy" in f['params'].keys():
             photon_energy = f.get('/params/photon_energy').value
-        except:
+        elif 'xparams' in f['params'].keys():
+            lines = [l.split(' ') for l in f['params/xparams'].value.decode('utf-8').split("\n")]
+            xparams = get_dict_from_lines(lines)
+            photon_energy = xparams['EPH']
+        else:
             # Legacy support: Try get from history.
             try:
                 photon_energy = f.get('/history/parent/detail/params/photonEnergy').value
@@ -61,10 +65,17 @@ def setFocusFromFile(fname, beam):
     Set beam focus from pmi file.
     """
     with h5py.File(fname, 'r') as f:
-        try:
+        if "focus" in f['params'].keys():
             focus_xFWHM = f.get('/params/focus/xFWHM').value
             focus_yFWHM = f.get('/params/focus/yFWHM').value
-        except:
+        elif 'xparams' in f['params'].keys():
+            lines = [l.split(' ') for l in f['params/xparams'].value.decode('utf-8').split("\n")]
+            xparams = get_dict_from_lines(lines)
+            diam = xparams['DIAM']
+            focus_xFWHM = diam
+            focus_yFWHM = diam
+
+        else:
             try:
                 focus_xFWHM = f.get('/history/parent/detail/misc/xFWHM').value
                 focus_yFWHM = f.get('/history/parent/detail/misc/yFWHM').value
@@ -187,3 +198,57 @@ def diffract(parameters):
     prepH5(outputName)
     for ntask in range(ntasks):
         MakeOneDiffr(myQuaternions, ntask, parameters, outputName)
+
+def get_dict_from_lines(reader):
+    """ Turn a list of [key, ' ', ..., value] elements into a dict.
+
+    :params reader: An iterable that contains lists of strings in format [key, ' ', ' ', ..., value]
+    :type: iterable (list, array, generator).
+
+    """
+    # These fields shall be handled as numeric data.
+    numeric_keys = [
+            'N',
+            'Z',
+            'DIST',
+            'EPH',
+            'NPH',
+            'DIAM',
+            'FLU_MAX',
+            'T',
+            'T0',
+            'R0',
+            'DT',
+            'STEPS',
+            'PROGRESS',
+            'RANDSEED',
+            'RSTARTE',
+            ]
+    # Initialize return dictionary.
+    ret = dict()
+
+    # Iteratoe through all lines.
+    for line in reader:
+        # Skip empty lines and comments.
+        if line == [] or line == ['']:
+            continue
+        if line[0][0] == '#':
+            continue
+
+        # Get key-value pair (they're separated by random number of whitespaces.
+        key, val = line[0], line[-1]
+
+        # Fix numeric data.
+        if key in numeric_keys:
+            try:
+                val = float(val)
+            except:
+                raise
+
+        # Store on dict.
+        ret[key] = val
+
+    # Return finished dict.
+    return ret
+
+
